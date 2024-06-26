@@ -1,27 +1,30 @@
 ARG GO_VERSION="1.22.2"
-ARG PLATFORM="linux"
-ARG OS="arm64"
-FROM --platform=${PLATFORM} golang:${GO_VERSION}-alpine AS build
+ARG PLATFORM="linux/amd64"
+ARG ARCH="amd64"
+ARG OS="linux"
+
+FROM --platform=${PLATFORM} alpine:edge AS build
+
 WORKDIR /app
 
 COPY ../.. ./
+RUN apk add --no-cache --update go gcc g++ libc-dev git make build-base
 
-# build app
-RUN apk add --no-cache ca-certificates
+# RUN apk update --no-cache && \
+# apk add --no-cache git gcc libc-dev
 
-RUN go mod download
+# ENV GOFLAGS -mod=vendor
 
 RUN go env -w GO111MODULE=on && \
-    CGO_ENABLED=0 GOARCH=${OS} GOOS=${PLATFORM} go build -o /kfproxy ./cmd/proxy/main.go
+    CGO_ENABLED=1 GOARCH=${ARCH} GOOS=${OS} go build -tags musl -o /kfproxy ./cmd/proxy/main.go
 
 ##
 ## Deploy
 ##
-FROM --platform=${PLATFORM} scratch
+FROM --platform=${PLATFORM} alpine:edge AS runtime
 
-WORKDIR /
+WORKDIR /app
 
-COPY --from=build /kfproxy /kfproxy
-COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=build /kfproxy /app/kfproxy
 
-ENTRYPOINT /kfproxy -port :8080
+ENTRYPOINT [ "/app/kfproxy", "-port", ":8080" ]

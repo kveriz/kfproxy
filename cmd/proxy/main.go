@@ -17,10 +17,10 @@ var (
 )
 
 func main() {
-	flag.StringVar(&port, "port", ":8008", "Port to serve requests")
+	flag.StringVar(&port, "port", ":8080", "Port to serve requests")
 	flag.Parse()
 
-	conf, ok := os.LookupEnv("PROPS")
+	conf, ok := os.LookupEnv("PRODUCER_CONFIG")
 
 	if !ok {
 		conf = fmt.Sprintf("%s/producer.properties", os.Getenv("HOME"))
@@ -38,6 +38,7 @@ func main() {
 	scanner := bufio.NewScanner(propFile)
 
 	opts := make(map[string]interface{})
+
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)
 	}
@@ -53,7 +54,6 @@ func main() {
 		value := prop[1]
 
 		opts[key] = value
-		log.Print(key, value)
 	}
 
 	log.Print("reading of config file is complete")

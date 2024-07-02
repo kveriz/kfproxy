@@ -26,9 +26,15 @@ spec:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}
+          {{- if .Values.env }}
           envFrom:
             - configMapRef:
                 name: {{ .Chart.Name }}-producer-env-configmap
+          {{- else }}
+          env:
+            - name: PRODUCER_CONFIG
+              value: "{{ .Values.config.mounts.config }}/producer.properties"
+          {{- end }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}/{{ .Chart.Name }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
@@ -41,17 +47,17 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
             - name: {{ .Chart.Name }}-producer-config-volume
-              mountPath: /config
-            - name: {{ .Chart.Name }}-pki-volume
-              mountPath: /mnt/ssl
+              mountPath: {{ .Values.config.mounts.config }}
+            - name: {{ .Chart.Name }}-client-volume
+              mountPath: {{ .Values.config.mounts.certs }}
               readOnly: true
       volumes:
         - name: {{ .Chart.Name }}-producer-config-volume
           configMap:
             name: {{ .Chart.Name }}-producer-properties-configmap
-        - name: {{ .Chart.Name }}-pki-volume
+        - name: {{ .Chart.Name }}-client-volume
           secret:
-            secretName: {{ .Chart.Name }}-pki-secret
+            secretName: {{ .Chart.Name }}-client-secret
             items:
               - key: ca.crt
                 path: ca.crt

@@ -14,4 +14,9 @@ metadata:
   labels:
     app: {{ .Chart.Name }}
 data:
+{{- if not .Values.config.custom }}
 {{ (tpl (.Files.Glob "config/*").AsConfig . ) | indent 2 }}
+{{- else }}
+  producer.properties: |
+{{ .Values.config.custom | indent 4}}
+{{- end }}

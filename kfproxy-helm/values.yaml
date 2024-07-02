@@ -43,6 +43,8 @@ config:
   mounts:
     config: /config
     certs: /mnt/ssl
+  custom: |
+    security.protocol=plain
 
 tls:
   ca: |

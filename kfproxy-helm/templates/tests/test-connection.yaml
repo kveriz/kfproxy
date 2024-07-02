@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "kfproxy.fullname" . }}-test-connection"
+  labels:
+    {{- include "kfproxy.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+spec:
+  containers:
+    - name: wget
+      image: busybox
+      command: ['wget']
+      args: ['{{ include "kfproxy.fullname" . }}:{{ .Values.service.port }}']
+  restartPolicy: Never

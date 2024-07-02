@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name:  {{ .Chart.Name }}-producer-env-configmap
+  labels:
+    app: {{ .Chart.Name }}
+data:
+  {{- toYaml .Values.env | nindent 2 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Chart.Name }}-producer-properties-configmap
+  labels:
+    app: {{ .Chart.Name }}
+data:
+{{ (tpl (.Files.Glob "config/*").AsConfig . ) | indent 2 }}

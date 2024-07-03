@@ -43,6 +43,7 @@ config:
   mounts:
     config: /config
     certs: /mnt/ssl
+  port: 8080
   custom: |
     security.protocol=plain
 

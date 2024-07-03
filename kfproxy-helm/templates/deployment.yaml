@@ -41,8 +41,12 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: http
-              containerPort: 8080
+              containerPort: {{ .Values.config.port | default 8080 }}
               protocol: TCP
+          {{- if .Values.config.port }}
+          command: [ "/app/kfproxy" ]
+          args: [ "-port", ":{{ .Values.config.port }}" ]
+          {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:

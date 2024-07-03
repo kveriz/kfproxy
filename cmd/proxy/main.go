@@ -48,7 +48,6 @@ func main() {
 
 		if !strings.HasPrefix(scanner.Text(), "#") {
 			prop = strings.Split(scanner.Text(), "=")
-
 		}
 		key := prop[0]
 		value := prop[1]

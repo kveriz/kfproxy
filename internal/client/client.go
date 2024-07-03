@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
@@ -35,14 +36,14 @@ func (c *Kafka) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	key, err := uuid.NewUUID()
+	uuid, err := uuid.NewUUID()
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		log.Fatal(err)
 	}
 
-	topic := r.Header["Topicname"][0]
+	topics := r.Header["Topicname"]
 
 	body := make([]byte, 0)
 
@@ -64,40 +65,40 @@ func (c *Kafka) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 
-	err = c.produce(topic, key.String(), value)
+	key := uuid.String()
 
-	if err != nil {
+	if err := c.produce(topics, key, value); err != nil {
 		log.Fatal(err)
 	}
 
-	w.Write([]byte(fmt.Sprintf("Message was successful published to topic %s with key %s", topic, key.String())))
-
+	w.Write([]byte(fmt.Sprintf("Message was successfully published to topic %v with key %s", topics, key)))
 }
 
-func (c *Kafka) produce(t, k string, v map[string]any) error {
-	topic := &kafka.TopicPartition{
-		Topic:     &t,
-		Partition: kafka.PartitionAny,
-	}
-
+func (c *Kafka) produce(t []string, k string, v map[string]any) error {
 	value, err := json.Marshal(v)
-
 	if err != nil {
 		log.Fatal(err)
 	}
+	topics := strings.Split(t[0], ",")
+	go func(t []string) {
+		for i, _ := range t {
+			topic := &kafka.TopicPartition{
+				Topic:     &t[i],
+				Partition: kafka.PartitionAny,
+			}
 
-	msg := &kafka.Message{
-		TopicPartition: *topic,
-		Value:          value,
-		Key:            []byte(k),
-		Timestamp:      time.Now(),
-	}
-
-	err = c.сlient.Produce(msg, nil)
-
-	if err != nil {
-		log.Fatal(err)
-	}
+			msg := &kafka.Message{
+				TopicPartition: *topic,
+				Value:          value,
+				Key:            []byte(k),
+				Timestamp:      time.Now(),
+			}
+			err = c.сlient.Produce(msg, nil)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+	}(topics)
 
 	go func() {
 		for e := range c.сlient.Events() {
